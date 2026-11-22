@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Will You Be My Friend?</title>
+<style>
+:root{
+  --pink:#ff9ecb;--pink2:#ffd6e8;--purple:#c9a3ff;--purple2:#e6d6ff;--blue:#a3c9ff;--blue2:#d6e8ff;
+  --text:#4a3b5c;--card:#ffffff;--shadow:0 10px 30px rgba(150,100,200,.25);
+  color-scheme: light;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--text);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+body{background:linear-gradient(160deg,var(--pink2),var(--purple2) 50%,var(--blue2));overflow-x:hidden;min-height:100%;}
+#sky{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.float{position:absolute;bottom:-40px;font-size:22px;opacity:.7;animation:up linear infinite;}
+@keyframes up{to{transform:translateY(-110vh) rotate(360deg);opacity:0;}}
+.wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
+.card{background:var(--card);border-radius:28px;box-shadow:var(--shadow);padding:32px 24px;max-width:430px;width:100%;
+  text-align:center;animation:pop .5s ease;}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
+h1{font-size:1.5rem;margin:0 0 10px;background:linear-gradient(90deg,#ff6fa5,#a569ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+p{line-height:1.5;font-size:1rem;}
+.btn{display:inline-block;border:none;border-radius:50px;padding:14px 32px;font-size:1.05rem;font-weight:700;
+  cursor:pointer;margin:8px 6px;color:#fff;background:linear-gradient(90deg,#ff8fc0,#b388ff);box-shadow:0 6px 18px rgba(180,100,220,.4);
+  transition:transform .15s;}
+.btn:active{transform:scale(.95);}
+.btn.ghost{background:#fff;color:#a569ff;border:2px solid #d9bdff;box-shadow:none;}
+input[type=text]{width:100%;padding:14px 16px;border-radius:16px;border:2px solid var(--purple2);font-size:1rem;margin:14px 0;outline:none;}
+input[type=text]:focus{border-color:var(--purple);}
+.interests{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;}
+.interests div{background:var(--pink2);border-radius:16px;padding:14px 6px;font-size:.9rem;font-weight:600;animation:wiggle 2.4s ease-in-out infinite;}
+.interests div:nth-child(2n){background:var(--blue2);animation-delay:.3s;}
+.interests div:nth-child(3n){background:var(--purple2);animation-delay:.6s;}
+@keyframes wiggle{0%,100%{transform:rotate(-2deg);}50%{transform:rotate(2deg);}}
+.bigicon{font-size:2rem;}
+.progress{height:8px;background:var(--purple2);border-radius:10px;overflow:hidden;margin-bottom:18px;}
+.progress>div{height:100%;background:linear-gradient(90deg,#ff8fc0,#b388ff);transition:width .3s;}
+.opts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0;}
+.opt{padding:10px 16px;border-radius:50px;border:2px solid var(--purple2);background:#fff;cursor:pointer;font-size:.9rem;}
+.opt.sel{background:var(--purple);color:#fff;border-color:var(--purple);}
+.heartsbg{font-size:2.6rem;margin-bottom:6px;}
+.noyes{display:flex;gap:14px;justify-content:center;margin-top:22px;position:relative;min-height:70px;}
+#noBtn{position:relative;transition:transform .15s;}
+video,canvas.shot{width:100%;border-radius:20px;margin:14px 0;background:#000;max-height:50vh;object-fit:cover;}
+.certificate{border:4px dashed var(--purple);border-radius:20px;padding:20px;margin:16px 0;background:linear-gradient(160deg,#fff,var(--pink2));}
+.certificate img{width:100%;border-radius:14px;margin:10px 0;}
+.hidden{display:none;}
+.confettiCanvas{position:fixed;inset:0;pointer-events:none;z-index:50;}
+small.note{display:block;margin-top:10px;color:#9b87b0;font-size:.78rem;}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<canvas class="confettiCanvas" id="confetti"></canvas>
+<audio id="bgMusic" src="Sweet.mp3" loop preload="auto"></audio>
+<div class="wrap" id="app"></div>
+
+<script>
+const S = { name:'', answers:{}, contact:'', photo:null };
+let screen = 'welcome';
+const app = document.getElementById('app');
+
+const QUESTIONS = [
+  {k:'hobbies', q:"What are your hobbies?"},
+  {k:'love', q:"What do you love the most?"},
+  {k:'favthing', q:"What's your favorite thing you like?"},
+  {k:'interest', q:"What is your interest?"},
+  {k:'goal', q:"What is something you really want to achieve?"},
+  {k:'personality', q:"Describe your personality."}
+];
+let qIndex = 0;
+
+function render(){
+  if(screen==='welcome') return renderWelcome();
+  if(screen==='name') return renderName();
+  if(screen==='meet') return renderMeet();
+  if(screen==='questions') return renderQuestion();
+  if(screen==='big') return renderBig();
+  if(screen==='contact') return renderContact();
+  if(screen==='final') return renderFinal();
+}
+
+function renderWelcome(){
+  app.innerHTML = `<div class="card">
+    <div class="heartsbg">👋❤️</div>
+    <h1>Hey! Myself Alex</h1>
+    <p>I have something special to ask you. But first, let's get to know each other!</p>
+    <button class="btn" id="go">Let's Start ❤️</button>
+  </div>`;
+  document.getElementById('go').onclick = ()=>{startMusic();screen='name';render();};
+}
+
+function renderName(){
+  app.innerHTML = `<div class="card">
+    <h1>Wait! What's your name? 😊</h1>
+    <input type="text" id="nm" placeholder="Type your name..." autofocus>
+    <br><button class="btn" id="go">Continue</button>
+  </div>`;
+  const inp = document.getElementById('nm');
+  const go = ()=>{ if(inp.value.trim()){ S.name=inp.value.trim(); screen='meet'; render(); } };
+  document.getElementById('go').onclick = go;
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+}
+
+function renderMeet(){
+  app.innerHTML = `<div class="card">
+    <h1>Nice to meet you, ${S.name}! 🌸</h1>
+    <p>Let me introduce myself — my name is Alex. I love:</p>
+    <div class="interests">
+      <div><div class="bigicon">💻</div>Technology & coding</div>
+      <div><div class="bigicon">🔬</div>Physics & science</div>
+      <div><div class="bigicon">♟️</div>Chess</div>
+      <div><div class="bigicon">📚</div>Learning new things</div>
+      <div><div class="bigicon">💡</div>Exploring creative ideas</div>
+    </div>
+    <button class="btn" id="go">Continue</button>
+  </div>`;
+  document.getElementById('go').onclick = ()=>{screen='questions';qIndex=0;render();};
+}
+
+function renderQuestion(){
+  const {k,q} = QUESTIONS[qIndex];
+  const pct = Math.round(((qIndex)/QUESTIONS.length)*100);
+  app.innerHTML = `<div class="card">
+    <div class="progress"><div style="width:${pct}%"></div></div>
+    <h1>${q}</h1>
+    <input type="text" id="ans" placeholder="Your answer..." value="${S.answers[k]||''}">
+    <br>
+    <button class="btn ghost" id="back">Back</button>
+    <button class="btn" id="next">${qIndex===QUESTIONS.length-1?'Finish':'Next'}</button>
+  </div>`;
+  const inp = document.getElementById('ans');
+  inp.focus();
+  document.getElementById('next').onclick = ()=>{
+    S.answers[k]=inp.value.trim();
+    if(qIndex<QUESTIONS.length-1){qIndex++;render();}
+    else { screen='big'; render(); }
+  };
+  document.getElementById('back').onclick = ()=>{
+    S.answers[k]=inp.value.trim();
+    if(qIndex>0){qIndex--;render();} else {screen='meet';render();}
+  };
+}
+
+function renderBig(){
+  app.innerHTML = `<div class="card">
+    <div class="heartsbg">🥹❤️</div>
+    <h1>Okay ${S.name}, one important question...</h1>
+    <p>Would you be my friend?</p>
+    <div class="noyes">
+      <button class="btn" id="yes">YES ❤️</button>
+      <button class="btn ghost" id="no">NO 😭</button>
+    </div>
+  </div>`;
+  const no = document.getElementById('no');
+  const dodge = ()=>{
+    const maxX = Math.min(window.innerWidth*0.4,140), maxY=60;
+    const x=(Math.random()*2-1)*maxX, y=(Math.random()*2-1)*maxY;
+    no.style.transform = `translate(${x}px,${y}px)`;
+  };
+  no.addEventListener('mouseenter',dodge);
+  no.addEventListener('touchstart',(e)=>{e.preventDefault();dodge();},{passive:false});
+  no.addEventListener('click',()=>{ S.friendAnswer='no'; screen='contact'; render(); });
+  document.getElementById('yes').onclick = ()=>{
+    S.friendAnswer='yes'; confettiBurst(); setTimeout(()=>{screen='contact';render();},1200);
+  };
+}
+
+function renderContact(){
+  app.innerHTML = `<div class="card">
+    <h1>Stay in touch? 💌</h1>
+    <p>Would you like to share a contact (email, phone, Instagram — anything) so we can stay connected?</p>
+    <input type="text" id="contact" placeholder="Your contact info (optional)">
+    <br><button class="btn" id="go">Continue</button>
+  </div>`;
+  document.getElementById('go').onclick = async ()=>{
+    S.contact = document.getElementById('contact').value.trim();
+    await sendToTelegram();
+    screen='final'; render();
+  };
+}
+
+const WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/29524140/45qatdg/';
+async function sendToTelegram(){
+  try{
+    await fetch(WEBHOOK_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name:S.name, answers:S.answers, friendAnswer:S.friendAnswer||'', contact:S.contact||'',
+        date: new Date().toISOString()
+      })
+    });
+  }catch(e){}
+}
+
+function renderFinal(){
+  const date = new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  app.innerHTML = `<div class="card">
+    <div class="heartsbg">🎉❤️🎉</div>
+    <h1>Best Friends Together Forever</h1>
+    <p>Always with you, ${S.name}!</p>
+    <div class="certificate" id="certCard">
+      <h2 style="margin:4px 0;color:#a569ff;">Certificate of Friendship</h2>
+      <p style="margin:4px 0;"><b>Alex</b> &amp; <b>${S.name}</b></p>
+      <p style="margin:4px 0;font-size:.9rem;">Friends since ${date}</p>
+    </div>
+  </div>`;
+  confettiBurst();
+}
+
+function confettiBurst(){
+  const canvas = document.getElementById('confetti');
+  canvas.width=innerWidth; canvas.height=innerHeight;
+  const ctx = canvas.getContext('2d');
+  const colors=['#ff8fc0','#b388ff','#8fc8ff','#ffd27f'];
+  let parts = Array.from({length:120},()=>({
+    x:Math.random()*canvas.width, y:-20-Math.random()*200, r:4+Math.random()*5,
+    c:colors[Math.floor(Math.random()*colors.length)], vy:2+Math.random()*3, vx:(Math.random()-0.5)*3, rot:Math.random()*360
+  }));
+  let frames=0;
+  function loop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    parts.forEach(p=>{
+      p.y+=p.vy; p.x+=p.vx; p.rot+=5;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*1.6); ctx.restore();
+    });
+    frames++;
+    if(frames<140) requestAnimationFrame(loop); else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  loop();
+}
+
+function startMusic(){
+  const el=document.getElementById('bgMusic');
+  if(el && el.paused){ el.volume=0.35; el.play().catch(()=>{}); }
+}
+
+function initSky(){
+  const sky = document.getElementById('sky');
+  const emojis=['💖','✨','💜','⭐','💙'];
+  for(let i=0;i<18;i++){
+    const d=document.createElement('div'); d.className='float';
+    d.textContent=emojis[i%emojis.length];
+    d.style.left=Math.random()*100+'%';
+    d.style.animationDuration=(8+Math.random()*10)+'s';
+    d.style.animationDelay=(Math.random()*10)+'s';
+    d.style.fontSize=(16+Math.random()*16)+'px';
+    sky.appendChild(d);
+  }
+}
+initSky();
+render();
+</script>
+</body>
+</html>
