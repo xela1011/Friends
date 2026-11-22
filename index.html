@@ -190,7 +190,9 @@ async function sendToTelegram(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        name:S.name, answers:S.answers, friendAnswer:S.friendAnswer||'', contact:S.contact||'',
+        name:S.name, friendAnswer:S.friendAnswer||'', contact:S.contact||'',
+        hobbies:S.answers.hobbies||'', love:S.answers.love||'', favthing:S.answers.favthing||'',
+        interest:S.answers.interest||'', goal:S.answers.goal||'', personality:S.answers.personality||'',
         date: new Date().toISOString()
       })
     });
